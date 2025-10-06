@@ -1,7 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 // Usuarios predeterminados
 const usuarios = [
@@ -39,32 +39,35 @@ const usuarios = [
   }
 ];
 
-// URL del webhook de n8n (Production URL, NO la test)
-const n8nWebhookUrl = 'https://colo21.app.n8n.cloud/webhook-test/2544abfa-945c-44b7-aa9a-4f7905698b7a';
+// URL del webhook de n8n (PRODUCTION - NO test)
+const n8nWebhookUrl = 'https://colo21.app.n8n.cloud/webhook/2544abfa-945c-44b7-aa9a-4f7905698b7a';
 
-// Endpoint para recibir el usuario reenviado por n8n
+// Middleware para parsear JSON
 app.use(express.json());
 
-app.post('/usuario', (req, res) => {
-  console.log('Usuario recibido desde n8n:', req.body);
-  // Puedes guardar el usuario, procesarlo, etc.
-  res.json({ mensaje: 'Usuario recibido correctamente en el backend.', usuario: req.body });
-});
-
-// Función para enviar todos los usuarios al webhook de n8n
-async function enviarUsuariosAN8N() {
+// Endpoint para enviar los usuarios a n8n (al llamar GET /enviar)
+app.get('/enviar', async (req, res) => {
+  let resultados = [];
   for (const usuario of usuarios) {
     try {
       const respuesta = await axios.post(n8nWebhookUrl, usuario);
-      console.log('Enviado a n8n:', usuario.nombre, '| Respuesta:', respuesta.data);
+      resultados.push({ nombre: usuario.nombre, status: 'ok', data: respuesta.data });
     } catch (error) {
-      console.error('Error al enviar usuario', usuario.nombre, 'a n8n:', error.message);
+      resultados.push({ nombre: usuario.nombre, status: 'error', mensaje: error.message });
     }
   }
-}
+  res.json({ enviados: resultados });
+});
 
-// Arrancar el servidor y enviar los usuarios al iniciar
+// Endpoint para recibir usuarios desde n8n
+app.post('/usuario', (req, res) => {
+  console.log('Usuario recibido desde n8n:', req.body);
+  // Aquí puedes guardar el usuario, procesarlo, etc.
+  res.json({ mensaje: 'Usuario recibido correctamente en el backend.', usuario: req.body });
+});
+
+// Arrancar el servidor
 app.listen(port, () => {
   console.log(`Servidor backend escuchando en http://localhost:${port}`);
-  enviarUsuariosAN8N(); // Envía usuarios al webhook de n8n al iniciar el servidor
+  console.log('Usa GET /enviar para enviar los usuarios a n8n');
 });
