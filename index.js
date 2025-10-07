@@ -1,56 +1,24 @@
 const express = require('express');
+const { createClient } = require('@supabase/supabase-js');
 const axios = require('axios');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Usuarios predeterminados con historia
-const usuarios = [
-  {
-    nombre: 'Juan Pérez',
-    email: 'juan.perez@example.com',
-    edad: 30,
-    telefono: '+541112345678',
-    direccion: 'Calle Falsa 123, Buenos Aires',
-    activo: true,
-    historia: 'Juan sueña con abrir su propia cafetería. Recientemente ha comenzado a ahorrar para lograrlo.'
-  },
-  {
-    nombre: 'Ana Gómez',
-    email: 'ana.gomez@example.com',
-    edad: 25,
-    telefono: '+541112349999',
-    direccion: 'Av. Libertador 456, Buenos Aires',
-    activo: false,
-    historia: 'Ana está terminando su carrera universitaria. Quiere viajar por Sudamérica cuando se reciba.'
-  },
-  {
-    nombre: 'Carlos Sosa',
-    email: 'carlos.sosa@example.com',
-    edad: 40,
-    telefono: '+541112347777',
-    direccion: 'Calle Real 789, Buenos Aires',
-    activo: true,
-    historia: 'Carlos es entrenador de fútbol infantil. Su mayor satisfacción es ver crecer a sus alumnos.'
-  },
-  {
-    nombre: 'Martina López',
-    email: 'martina.lopez@example.com',
-    edad: 22,
-    telefono: '+541112346666',
-    direccion: 'Calle Nueva 321, Buenos Aires',
-    activo: true,
-    historia: 'Martina está escribiendo su primer libro. Sueña con publicarlo antes de fin de año.'
-  }
-];
+// Configuración Supabase
+const supabaseUrl = process.env.SUPABASE_URL || 'https://oogggxxrjdkprvxyiucv.supabase.co';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9vZ2dneHhyamRrcHJ2eHlpdWN2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1OTc4NDIzNywiZXhwIjoyMDc1MzYwMjM3fQ.RrmoyI4wRxBja7l_H22k1cSbRl-Gk49G3rg3682zk-A';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // URL del webhook de n8n (PRODUCTION)
 const n8nWebhookUrl = 'https://colo21.app.n8n.cloud/webhook/2544abfa-945c-44b7-aa9a-4f7905698b7a';
 
-// Middleware para parsear JSON
 app.use(express.json());
 
-// Endpoint para enviar los usuarios a n8n (al llamar GET /enviar)
+// Endpoint para enviar los usuarios a n8n
 app.get('/enviar', async (req, res) => {
+  const { data: usuarios, error } = await supabase.from('usuarios').select('*');
+  if (error) return res.status(500).json({ error: error.message });
+
   let resultados = [];
   for (const usuario of usuarios) {
     try {
@@ -64,38 +32,49 @@ app.get('/enviar', async (req, res) => {
 });
 
 // Endpoint para obtener la historia de un usuario por email
-app.get('/historia/:email', (req, res) => {
+app.get('/historia/:email', async (req, res) => {
   const email = req.params.email;
-  const usuario = usuarios.find(u => u.email === email);
-  if (!usuario) {
+  const { data: usuarios, error } = await supabase
+    .from('usuarios')
+    .select('nombre,historia')
+    .eq('email', email)
+    .single();
+
+  if (error || !usuarios) {
     return res.status(404).json({ mensaje: 'Usuario no encontrado.' });
   }
-  res.json({ nombre: usuario.nombre, historia: usuario.historia });
+  res.json({ nombre: usuarios.nombre, historia: usuarios.historia });
 });
 
 // Endpoint para listar todas las historias
-app.get('/historias', (req, res) => {
-  const historias = usuarios.map(u => ({
-    nombre: u.nombre,
-    historia: u.historia
-  }));
-  res.json({ historias });
+app.get('/historias', async (req, res) => {
+  const { data: usuarios, error } = await supabase
+    .from('usuarios')
+    .select('nombre,historia');
+
+  if (error) return res.status(500).json({ error: error.message });
+
+  res.json({ historias: usuarios });
 });
 
 // Endpoint para recibir una historia creada por n8n y actualizar al usuario
-app.post('/historia', (req, res) => {
+app.post('/historia', async (req, res) => {
   const { email, content } = req.body;
   if (!email || !content) {
     return res.status(400).json({ mensaje: 'Se requiere email y content en el cuerpo.' });
   }
 
-  const usuario = usuarios.find(u => u.email === email);
-  if (!usuario) {
-    return res.status(404).json({ mensaje: 'Usuario no encontrado.' });
+  const { data, error } = await supabase
+    .from('usuarios')
+    .update({ historia: content })
+    .eq('email', email)
+    .select();
+
+  if (error || !data || data.length === 0) {
+    return res.status(404).json({ mensaje: 'Usuario no encontrado o error al actualizar.' });
   }
 
-  usuario.historia = content;
-  res.json({ mensaje: 'Historia actualizada correctamente.', usuario });
+  res.json({ mensaje: 'Historia actualizada correctamente.', usuario: data[0] });
 });
 
 // Middleware profesional para logging de solicitudes
