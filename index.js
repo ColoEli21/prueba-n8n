@@ -82,6 +82,14 @@ app.get('/historias', (req, res) => {
   res.json({ historias });
 });
 
+// Endpoint para recibir una historia creada por n8n y actualizar al usuario
+app.post('/historia', (req, res) => {
+  const { content } = req.body;
+
+  usuario.historia = content;
+  res.json({ mensaje: 'Historia actualizada correctamente. Historia: ' + content });
+});
+
 // Middleware profesional para logging de solicitudes
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
@@ -99,5 +107,6 @@ app.listen(port, () => {
   console.log('Usa GET /enviar para enviar los usuarios a n8n');
   console.log('Usa GET /historia/:email para obtener la historia de un usuario');
   console.log('Usa GET /historias para listar todas las historias');
+  console.log('Usa POST /historia para recibir y actualizar la historia creada por n8n');
   console.log('Usa GET /salud para monitoreo de estado');
 });
