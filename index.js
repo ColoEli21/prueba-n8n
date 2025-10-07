@@ -57,24 +57,23 @@ app.get('/historias', async (req, res) => {
   res.json({ historias: usuarios });
 });
 
-// Endpoint para recibir una historia creada por n8n y actualizar al usuario
-app.post('/historia', async (req, res) => {
+// Endpoint para recibir historia desde n8n y mostrarla en consola
+app.post('/historia', (req, res) => {
   const { email, content } = req.body;
+
+  console.log('📩 Datos recibidos desde n8n:');
+  console.log('Email:', email);
+  console.log('Contenido:', content);
+
   if (!email || !content) {
     return res.status(400).json({ mensaje: 'Se requiere email y content en el cuerpo.' });
   }
 
-  const { data, error } = await supabase
-    .from('usuarios')
-    .update({ historia: content })
-    .eq('email', email)
-    .select();
-
-  if (error || !data || data.length === 0) {
-    return res.status(404).json({ mensaje: 'Usuario no encontrado o error al actualizar.' });
-  }
-
-  res.json({ mensaje: 'Historia actualizada correctamente.', usuario: data[0] });
+  // Acá NO se hace nada con la base de datos 👇
+  res.json({
+    mensaje: 'Historia recibida correctamente (sin modificar base de datos)',
+    data: { email, content },
+  });
 });
 
 // Middleware profesional para logging de solicitudes
