@@ -84,10 +84,18 @@ app.get('/historias', (req, res) => {
 
 // Endpoint para recibir una historia creada por n8n y actualizar al usuario
 app.post('/historia', (req, res) => {
-  const { content } = req.body;
+  const { email, content } = req.body;
+  if (!email || !content) {
+    return res.status(400).json({ mensaje: 'Se requiere email y content en el cuerpo.' });
+  }
+
+  const usuario = usuarios.find(u => u.email === email);
+  if (!usuario) {
+    return res.status(404).json({ mensaje: 'Usuario no encontrado.' });
+  }
 
   usuario.historia = content;
-  res.json({ mensaje: 'Historia actualizada correctamente. Historia: ' + content });
+  res.json({ mensaje: 'Historia actualizada correctamente.', usuario });
 });
 
 // Middleware profesional para logging de solicitudes
