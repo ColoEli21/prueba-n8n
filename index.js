@@ -6,7 +6,7 @@ const port = process.env.PORT || 3000;
 
 // Configuración Supabase
 const supabaseUrl = process.env.SUPABASE_URL || 'https://oogggxxrjdkprvxyiucv.supabase.co';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9vZ2dneHhyamRrcHJ2eHlpdWN2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1OTc4NDIzNywiZXhwIjoyMDc1MzYwMjM3fQ.RrmoyI4wRxBja7l_H22k1cSbRl-Gk49G3rg3682zk-A';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9vZ2dneHhyamRrcHJ2eHlpdWN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk3ODQyMzcsImV4cCI6MjA3NTM2MDIzN30.6w_1dqv_cB1ya8OdXgqwvTnOfoVRansPfWr9hMJ0IXY';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // URL del webhook de n8n (PRODUCTION)
